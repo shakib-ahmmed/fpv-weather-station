@@ -6,12 +6,12 @@
 #include <time.h>
 
 // ===== WiFi Credentials =====
-const char *ssid = "BazFPV";
-const char *password = "AROSH2023";
+const char *ssid = "";
+const char *password = "";
 
 // ===== Update Interval =====
-const unsigned long UPDATE_INTERVAL = 8640000; // 10 API calls/day
-const unsigned long FLICK_INTERVAL = 1000;     // flicker interval
+const unsigned long UPDATE_INTERVAL = 8640000; 
+const unsigned long FLICK_INTERVAL = 1000;     
 
 // ===== Weather Variables =====
 float temp = 16.0, wind = 6.0, hum = 60.0, vis = 10.0;
@@ -94,19 +94,19 @@ void drawGrid()
   tft.print("FPV WEATHER STATION");
 
   // Horizontal lines
-  tft.drawFastHLine(0, 50, 240, TFT_DARKGREY);  // below header
-  tft.drawFastHLine(0, 120, 240, TFT_DARKGREY); // after first row
-  tft.drawFastHLine(0, 190, 240, TFT_DARKGREY); // after second row
-  tft.drawFastHLine(0, 260, 240, TFT_DARKGREY); // above bottom section
+  tft.drawFastHLine(0, 50, 240, TFT_DARKGREY);  
+  tft.drawFastHLine(0, 120, 240, TFT_DARKGREY); 
+  tft.drawFastHLine(0, 190, 240, TFT_DARKGREY); 
+  tft.drawFastHLine(0, 260, 240, TFT_DARKGREY); 
 
   // Vertical center lines
-  tft.drawFastVLine(120, 50, 210, TFT_DARKGREY); // full vertical for data
+  tft.drawFastVLine(120, 50, 210, TFT_DARKGREY); 
 }
 
 // ===== Draw Fly Status Below Header =====
 void drawFlyStatus()
 {
-  bool safe = (wind < 15.0); // flyable threshold
+  bool safe = (wind < 15.0); 
 
   // Flicker effect
   if (millis() - lastFlick > FLICK_INTERVAL)
@@ -118,29 +118,29 @@ void drawFlyStatus()
   uint16_t statusBG = safe ? TFT_GREEN : TFT_RED;
   uint16_t textColor = flick ? TFT_BLACK : TFT_RED;
 
-  tft.fillRect(0, 50, 240, 20, statusBG); // rectangle under header
+  tft.fillRect(0, 50, 240, 20, statusBG); 
 
   // Center text horizontally
-  tft.setTextDatum(lgfx::middle_center); // set datum to center
+  tft.setTextDatum(lgfx::middle_center); 
   tft.setTextSize(2);
   tft.setTextColor(textColor, statusBG);
 
   tft.drawString(safe ? "READY TO FLY" : "STAY GROUNDED", 120, 60);
-  // X=120 → middle of 240px width, Y=50+10 height offset + extra for text height
+  
 }
 
 // ===== Draw Weather Data =====
 void drawWeather()
 {
   // TEMP & WIND
-  tft.setTextSize(1); // smaller labels
+  tft.setTextSize(1); 
   tft.setTextColor(TFT_LIGHTGREY, TFT_BLACK);
   tft.setCursor(15, 75);
-  tft.print("TEMP"); // moved down
+  tft.print("TEMP"); 
   tft.setCursor(135, 75);
   tft.print("WIND");
 
-  tft.setTextSize(2); // big numbers
+  tft.setTextSize(2); 
   tft.setTextColor(TFT_ORANGE, TFT_BLACK);
   tft.setCursor(15, 90);
   tft.printf("%.1f C", temp);
@@ -234,9 +234,9 @@ void loop()
     lastUpdate = nowMillis;
   }
 
-  drawFlyStatus();  // below header
-  drawWeather();    // full layout with boxes
-  drawWiFiStatus(); // bottom right
+  drawFlyStatus();  
+  drawWeather();    
+  drawWiFiStatus(); 
 
   delay(100);
 }
