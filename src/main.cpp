@@ -6,12 +6,12 @@
 #include <time.h>
 
 // ===== WiFi Credentials =====
-const char *ssid = "";
-const char *password = "";
+const char *ssid = "BazFPV";
+const char *password = "AROSH2023";
 
 // ===== Update Interval =====
-const unsigned long UPDATE_INTERVAL = 8640000; 
-const unsigned long FLICK_INTERVAL = 1000;     
+const unsigned long UPDATE_INTERVAL = 8640000;
+const unsigned long FLICK_INTERVAL = 1000;
 
 // ===== Weather Variables =====
 float temp = 16.0, wind = 6.0, hum = 60.0, vis = 10.0;
@@ -48,10 +48,6 @@ public:
     panel_cfg.panel_height = 320;
     panel_cfg.memory_width = 240;
     panel_cfg.memory_height = 320;
-    panel_cfg.offset_rotation = 0;
-    panel_cfg.invert = false;
-    panel_cfg.rgb_order = false;
-    panel_cfg.bus_shared = false;
 
     _panel.config(panel_cfg);
     setPanel(&_panel);
@@ -79,36 +75,131 @@ void getWeather()
     hum = doc["hourly"]["relative_humidity_2m"][0];
     vis = (float)doc["hourly"]["visibility"][0] / 1000.0;
   }
+
   http.end();
 }
 
-// ===== Draw Grid =====
+//////////////////////////////////////////////////
+//////////////// BOOT SCREENS ////////////////////
+//////////////////////////////////////////////////
+
+void splashScreen()
+{
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextDatum(lgfx::middle_center);
+
+  tft.setTextSize(3);
+  tft.setTextColor(TFT_CYAN);
+  tft.drawString("BazFPV", 120, 130);
+
+  tft.setTextSize(2);
+  tft.setTextColor(TFT_LIGHTGREY);
+  tft.drawString("FPV WEATHER STATION", 120, 170);
+
+  delay(1500);
+}
+
+void loadingBar(const char *msg)
+{
+  tft.fillScreen(TFT_BLACK);
+
+  tft.setTextDatum(lgfx::middle_center);
+  tft.setTextSize(2);
+  tft.setTextColor(TFT_WHITE);
+  tft.drawString(msg, 120, 120);
+
+  tft.drawRect(40, 160, 160, 18, TFT_WHITE);
+
+  for (int i = 0; i <= 156; i += 4)
+  {
+    tft.fillRect(42 + i, 162, 4, 14, TFT_GREEN);
+    delay(35);
+  }
+}
+
+void satelliteAnimation()
+{
+  tft.fillScreen(TFT_BLACK);
+
+  tft.setTextDatum(lgfx::middle_center);
+  tft.setTextSize(2);
+  tft.setTextColor(TFT_CYAN);
+  tft.drawString("ACQUIRING SATELLITES", 120, 80);
+
+  for (int i = 0; i < 4; i++)
+  {
+    tft.fillCircle(120, 170, 5, TFT_WHITE);
+    tft.drawCircle(120, 170, 20 + i * 20, TFT_GREEN);
+    delay(350);
+  }
+
+  delay(700);
+}
+
+void wifiConnectScreen()
+{
+  tft.fillScreen(TFT_BLACK);
+
+  tft.setTextDatum(lgfx::middle_center);
+  tft.setTextSize(2);
+  tft.setTextColor(TFT_YELLOW);
+  tft.drawString("CONNECTING WIFI", 120, 130);
+
+  WiFi.begin(ssid, password);
+
+  int dots = 0;
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    tft.setCursor(95, 170);
+    tft.print("Please wait");
+
+    tft.setCursor(170, 170);
+
+    for (int i = 0; i < dots; i++)
+      tft.print(".");
+
+    dots++;
+    if (dots > 3)
+      dots = 0;
+
+    delay(500);
+    tft.fillRect(170, 170, 40, 15, TFT_BLACK);
+  }
+
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_GREEN);
+  tft.drawString("WIFI CONNECTED", 120, 150);
+
+  delay(1200);
+}
+
+//////////////////////////////////////////////////
+/////////////////// MAIN UI //////////////////////
+//////////////////////////////////////////////////
+
 void drawGrid()
 {
   tft.fillScreen(TFT_BLACK);
 
-  // Header
-  tft.setTextColor(TFT_WHITE);
+  tft.setTextColor(TFT_PINK);
+  tft.setTextDatum(lgfx::middle_center);
   tft.setTextSize(2);
   tft.setCursor(15, 12);
   tft.print("FPV WEATHER STATION");
 
-  // Horizontal lines
-  tft.drawFastHLine(0, 50, 240, TFT_DARKGREY);  
-  tft.drawFastHLine(0, 120, 240, TFT_DARKGREY); 
-  tft.drawFastHLine(0, 190, 240, TFT_DARKGREY); 
-  tft.drawFastHLine(0, 260, 240, TFT_DARKGREY); 
+  tft.drawFastHLine(0, 50, 240, TFT_YELLOW);
+  tft.drawFastHLine(0, 120, 240, TFT_BLUE);
+  tft.drawFastHLine(0, 190, 240, TFT_RED);
+  tft.drawFastHLine(0, 260, 240, TFT_GREEN);
 
-  // Vertical center lines
-  tft.drawFastVLine(120, 50, 210, TFT_DARKGREY); 
+  tft.drawFastVLine(120, 50, 210, TFT_DARKGREY);
 }
 
-// ===== Draw Fly Status Below Header =====
 void drawFlyStatus()
 {
-  bool safe = (wind < 15.0); 
+  bool safe = (wind < 15.0);
 
-  // Flicker effect
   if (millis() - lastFlick > FLICK_INTERVAL)
   {
     flick = !flick;
@@ -118,49 +209,51 @@ void drawFlyStatus()
   uint16_t statusBG = safe ? TFT_GREEN : TFT_RED;
   uint16_t textColor = flick ? TFT_BLACK : TFT_RED;
 
-  tft.fillRect(0, 50, 240, 20, statusBG); 
+  tft.fillRect(0, 50, 240, 20, statusBG);
 
-  // Center text horizontally
-  tft.setTextDatum(lgfx::middle_center); 
+  tft.setTextDatum(lgfx::middle_center);
   tft.setTextSize(2);
   tft.setTextColor(textColor, statusBG);
 
   tft.drawString(safe ? "READY TO FLY" : "STAY GROUNDED", 120, 60);
-  
 }
 
-// ===== Draw Weather Data =====
 void drawWeather()
 {
-  // TEMP & WIND
-  tft.setTextSize(1); 
+  tft.setTextSize(1);
   tft.setTextColor(TFT_LIGHTGREY, TFT_BLACK);
-  tft.setCursor(15, 75);
-  tft.print("TEMP"); 
-  tft.setCursor(135, 75);
-  tft.print("WIND");
 
-  tft.setTextSize(2); 
-  tft.setTextColor(TFT_ORANGE, TFT_BLACK);
+  tft.setCursor(15, 75);
+  tft.print("TEMP");
+  tft.setCursor(135, 75);
+  tft.print("WIND SPEED");
+
+  tft.setTextSize(2);
+
+  tft.setTextColor(TFT_ORANGE);
   tft.setCursor(15, 90);
   tft.printf("%.1f C", temp);
-  tft.setTextColor(TFT_CYAN, TFT_BLACK);
+
+  tft.setTextColor(TFT_CYAN);
   tft.setCursor(135, 90);
   tft.printf("%.1f kph", wind);
 
-  // HUMIDITY & VISIBILITY
   tft.setTextSize(1);
-  tft.setTextColor(TFT_LIGHTGREY, TFT_BLACK);
+  tft.setTextColor(TFT_LIGHTGREY);
+
   tft.setCursor(15, 140);
   tft.print("HUMIDITY");
+
   tft.setCursor(135, 140);
   tft.print("VISIBILITY");
 
   tft.setTextSize(2);
-  tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+
+  tft.setTextColor(TFT_YELLOW);
   tft.setCursor(15, 155);
   tft.printf("%.0f %%", hum);
-  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+
+  tft.setTextColor(TFT_WHITE);
   tft.setCursor(135, 155);
   tft.printf("%.1f km", vis);
 
@@ -195,7 +288,6 @@ void drawWeather()
   tft.drawFastHLine(0, 230, 240, TFT_DARKGREY);
 }
 
-// ===== Draw WiFi Status at Bottom =====
 void drawWiFiStatus()
 {
   tft.setTextSize(1);
@@ -204,39 +296,46 @@ void drawWiFiStatus()
   tft.print(WiFi.status() == WL_CONNECTED ? "WiFi: OK" : "WiFi: OFFLINE");
 }
 
+//////////////////////////////////////////////////
+//////////////////// SETUP ///////////////////////
+//////////////////////////////////////////////////
+
 void setup()
 {
   tft.init();
   tft.setRotation(7);
   tft.setSwapBytes(true);
   tft.setTextDatum(lgfx::top_left);
-  tft.setTextColor(TFT_WHITE, TFT_BLACK);
 
-  drawGrid();
-
-  // Connect WiFi
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED)
-    delay(500);
+  splashScreen();
+  loadingBar("SYSTEM BOOT");
+  satelliteAnimation();
+  wifiConnectScreen();
 
   configTime(21600, 0, "pool.ntp.org");
+
   getWeather();
+
+  drawGrid();
 }
+
+//////////////////////////////////////////////////
+//////////////////// LOOP ////////////////////////
+//////////////////////////////////////////////////
 
 void loop()
 {
   unsigned long nowMillis = millis();
 
-  // Update weather periodically
   if (nowMillis - lastUpdate > UPDATE_INTERVAL || lastUpdate == 0)
   {
     getWeather();
     lastUpdate = nowMillis;
   }
 
-  drawFlyStatus();  
-  drawWeather();    
-  drawWiFiStatus(); 
+  drawFlyStatus();
+  drawWeather();
+  drawWiFiStatus();
 
   delay(100);
 }
