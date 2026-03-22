@@ -6,8 +6,8 @@
 #include <time.h>
 
 // ===== WiFi Credentials =====
-const char *ssid = "BazFPV";
-const char *password = "AROSH2023";
+const char *ssid = "your wifi name";
+const char *password = "your wifi password";
 
 // ===== Update Interval =====
 const unsigned long UPDATE_INTERVAL = 8640000;
